@@ -6,8 +6,6 @@ require('dotenv').config();
 
 app.use(cors());
 app.use(express.static('public'));
-
-// Parse form data
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
@@ -15,72 +13,42 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html');
 });
 
-// Store users and exercises
+// Users
 const users = [];
-const exercises = [];
 
-// Create a user
+// Create user
 app.post('/api/users', (req, res) => {
   const username = req.body.username;
 
-  if (!username) {
-    return res.json({
-      error: 'username is required'
-    });
-  }
-
   const user = {
     username: username,
-    _id: String(users.length + 1)
+    _id: String(users.length + 1),
+    log: []
   };
 
   users.push(user);
 
-  res.json(user);
-});
-
-// Add exercise to a user
-app.post('/api/users/:_id/exercises', (req, res) => {
-  const user = users.find(user => user._id === req.params._id);
-
-  if (!user) {
-    return res.json({
-      error: 'user not found'
-    });
-  }
-
-  const description = req.body.description;
-  const duration = Number(req.body.duration);
-
-  let date;
-
-  if (req.body.date) {
-    date = new Date(req.body.date);
-  } else {
-    date = new Date();
-  }
-
-  const exercise = {
+  res.json({
     username: user.username,
-    description: description,
-    duration: duration,
-    date: date.toDateString(),
-    _id: String(exercises.length + 1)
-  };
-
-  exercises.push(exercise);
-
-  res.json(exercise);
+    _id: user._id
+  });
 });
 
 // Get all users
 app.get('/api/users', (req, res) => {
-  res.json(users);
+  res.json(
+    users.map(user => ({
+      username: user.username,
+      _id: user._id
+    }))
+  );
 });
 
-// Get exercise log
-app.get('/api/users/:_id/logs', (req, res) => {
-  const user = users.find(user => user._id === req.params._id);
+// Add exercise
+app.post('/api/users/:_id/exercises', (req, res) => {
+  const user = users.find(
+    user => user._id === req.params._id
+  );
 
   if (!user) {
     return res.json({
@@ -88,50 +56,79 @@ app.get('/api/users/:_id/logs', (req, res) => {
     });
   }
 
-  let userExercises = exercises.filter(
-    exercise => exercise.username === user.username
+  const date = req.body.date
+    ? new Date(req.body.date)
+    : new Date();
+
+  const exercise = {
+    description: req.body.description,
+    duration: Number(req.body.duration),
+    date: date.toDateString()
+  };
+
+  user.log.push(exercise);
+
+  // FCC expects the user object with exercise fields added
+  res.json({
+    username: user.username,
+    _id: user._id,
+    description: exercise.description,
+    duration: exercise.duration,
+    date: exercise.date
+  });
+});
+
+// Get exercise log
+app.get('/api/users/:_id/logs', (req, res) => {
+  const user = users.find(
+    user => user._id === req.params._id
   );
 
-  // Optional parameters
-  const from = req.query.from;
-  const to = req.query.to;
-  const limit = req.query.limit;
-
-  if (from) {
-    const fromDate = new Date(from);
-
-    userExercises = userExercises.filter(
-      exercise => new Date(exercise.date) >= fromDate
-    );
+  if (!user) {
+    return res.json({
+      error: 'user not found'
+    });
   }
 
-  if (to) {
-    const toDate = new Date(to);
+  let log = [...user.log];
 
-    userExercises = userExercises.filter(
-      exercise => new Date(exercise.date) <= toDate
-    );
+  // Filter from date
+  if (req.query.from) {
+    const from = new Date(req.query.from);
+
+    log = log.filter(exercise => {
+      return new Date(exercise.date) >= from;
+    });
   }
 
-  if (limit) {
-    userExercises = userExercises.slice(0, Number(limit));
+  // Filter to date
+  if (req.query.to) {
+    const to = new Date(req.query.to);
+
+    log = log.filter(exercise => {
+      return new Date(exercise.date) <= to;
+    });
+  }
+
+  // Limit results
+  if (req.query.limit) {
+    log = log.slice(0, Number(req.query.limit));
   }
 
   res.json({
     username: user.username,
-    count: userExercises.length,
+    count: log.length,
     _id: user._id,
-    log: userExercises.map(exercise => ({
-      description: exercise.description,
-      duration: exercise.duration,
-      date: exercise.date
-    }))
+    log: log
   });
 });
 
-// Start server
-const listener = app.listen(process.env.PORT || 3000, () => {
-  console.log(
-    'Your app is listening on port ' + listener.address().port
-  );
-});
+const listener = app.listen(
+  process.env.PORT || 3000,
+  () => {
+    console.log(
+      'Your app is listening on port ' +
+      listener.address().port
+    );
+  }
+);
