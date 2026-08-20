@@ -14,10 +14,13 @@ app.get('/', function (req, res) {
   res.sendFile(process.cwd() + '/views/index.html');
 });
 
-// File upload
+// File upload middleware
 var upload = multer({ dest: 'uploads/' });
 
+// File Metadata API
 app.post('/api/fileanalyse', upload.single('upfile'), function (req, res) {
+  console.log(req.file);
+
   res.json({
     name: req.file.originalname,
     type: req.file.mimetype,
