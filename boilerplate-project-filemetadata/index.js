@@ -14,19 +14,11 @@ app.get('/', (req, res) => {
   res.sendFile(process.cwd() + '/views/index.html');
 });
 
-// Store uploaded files in memory
-const upload = multer({
-  storage: multer.memoryStorage()
-});
+// Multer
+const upload = multer({ dest: 'uploads/' });
 
-// File Metadata Microservice
+// File upload endpoint
 app.post('/api/fileanalyse', upload.single('upfile'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({
-      error: 'No file uploaded'
-    });
-  }
-
   res.json({
     name: req.file.originalname,
     type: req.file.mimetype,
