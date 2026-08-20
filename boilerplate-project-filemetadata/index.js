@@ -10,13 +10,23 @@ app.use(cors());
 
 app.use('/public', express.static(process.cwd() + '/public'));
 
-app.get('/', (req, res) => {
+app.get('/', function (req, res) {
   res.sendFile(process.cwd() + '/views/index.html');
 });
 
-const upload = multer({ dest: 'uploads/' });
+// Store uploaded files in memory.
+// This avoids filesystem issues on Render.
+const upload = multer({
+  storage: multer.memoryStorage()
+});
 
-app.post('/api/fileanalyse', upload.single('upfile'), (req, res) => {
+app.post('/api/fileanalyse', upload.single('upfile'), function (req, res) {
+  if (!req.file) {
+    return res.status(400).json({
+      error: 'No file uploaded'
+    });
+  }
+
   res.json({
     name: req.file.originalname,
     type: req.file.mimetype,
@@ -26,6 +36,6 @@ app.post('/api/fileanalyse', upload.single('upfile'), (req, res) => {
 
 const port = process.env.PORT || 3000;
 
-app.listen(port, () => {
+app.listen(port, function () {
   console.log('Your app is listening on port ' + port);
 });
