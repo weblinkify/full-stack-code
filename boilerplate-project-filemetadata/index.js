@@ -19,7 +19,7 @@ const upload = multer({
   storage: multer.memoryStorage()
 });
 
-app.post('/api/fileanalyse', upload.single('upfile'), function (req, res) {
+app.post('/api/fileanalyse', upload.single('upfile'), (req, res) => {
   res.json({
     name: req.file.originalname,
     type: req.file.mimetype,
