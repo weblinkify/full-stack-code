@@ -14,19 +14,12 @@ app.get('/', function (req, res) {
   res.sendFile(process.cwd() + '/views/index.html');
 });
 
-// Store uploaded files in memory.
-// This avoids filesystem issues on Render.
+// Multer stores the uploaded file in memory.
 const upload = multer({
   storage: multer.memoryStorage()
 });
 
 app.post('/api/fileanalyse', upload.single('upfile'), function (req, res) {
-  if (!req.file) {
-    return res.status(400).json({
-      error: 'No file uploaded'
-    });
-  }
-
   res.json({
     name: req.file.originalname,
     type: req.file.mimetype,
