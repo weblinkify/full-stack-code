@@ -14,17 +14,10 @@ app.get('/', function (req, res) {
   res.sendFile(process.cwd() + '/views/index.html');
 });
 
-// Multer setup
+// File upload
 var upload = multer({ dest: 'uploads/' });
 
-// File metadata endpoint
 app.post('/api/fileanalyse', upload.single('upfile'), function (req, res) {
-  if (!req.file) {
-    return res.json({
-      error: 'No file uploaded'
-    });
-  }
-
   res.json({
     name: req.file.originalname,
     type: req.file.mimetype,
@@ -32,7 +25,7 @@ app.post('/api/fileanalyse', upload.single('upfile'), function (req, res) {
   });
 });
 
-const port = process.env.PORT || 3000;
+var port = process.env.PORT || 3000;
 
 app.listen(port, function () {
   console.log('Your app is listening on port ' + port);
